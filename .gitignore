@@ -1,0 +1,22 @@
+# Archivos de compilación y dependencias
+/target/
+*.jar
+*.war
+
+# Configuración de entorno
+.env
+application.properties
+application.yml
+
+# Configuración de IDEs
+/.idea/
+/.vscode/
+/*.iml
+
+# Logs y cachés
+/logs/
+/*.log
+/tmp/
+
+# Archivos de Git
+.DS_Store
