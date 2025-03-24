@@ -19,26 +19,30 @@ import com.example.login.repositories.UsuarioRepository;
 @Service
 public class JpaUserDetailService implements UserDetailsService {
 
-    @Autowired
-    private UsuarioRepository repository;
+        
+        @Autowired
+        private final UsuarioRepository usuarioRepository;
 
-    @Override
-    @Transactional(readOnly = true)
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = repository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
+        public JpaUserDetailService(UsuarioRepository usuarioRepository) {
+                this.usuarioRepository = usuarioRepository;
+        }
 
-        List<GrantedAuthority> authorities = usuario.getRoles()
-                .stream()
-                .map(r -> new SimpleGrantedAuthority(r.getName()))
-                .collect(Collectors.toList());
+        @Override
+        @Transactional(readOnly = true)
+        public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+                Usuario usuario = usuarioRepository.findByUsername(username)
+                                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        return new User(usuario.getUsername(),
-                usuario.getPassword(),
-                true,
-                true,
-                true,
-                true, authorities);
-    }
+                if (usuario.getId() == null) {
+                        throw new RuntimeException("El usuario recuperado de la base de datos tiene ID nulo");
+                }
+
+                List<GrantedAuthority> authorities = usuario.getRoles()
+                                .stream()
+                                .map(r -> new SimpleGrantedAuthority(r.getName()))
+                                .collect(Collectors.toList());
+
+                                return new User(usuario.getUsername(), usuario.getPassword(), authorities);
+        }
 
 }

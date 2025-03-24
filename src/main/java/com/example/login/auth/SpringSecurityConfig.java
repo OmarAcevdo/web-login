@@ -19,8 +19,10 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import com.example.login.Services.RefreshTokenService;
 import com.example.login.auth.filters.JwtAuthenticationFilter;
 import com.example.login.auth.filters.JwtValidationFilter;
+import com.example.login.repositories.UsuarioRepository;
 @Configuration
 public class SpringSecurityConfig {
 
@@ -36,7 +38,7 @@ public class SpringSecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager, RefreshTokenService refreshTokenService, UsuarioRepository usuarioRepository) throws Exception {
         return http.csrf(csrf -> csrf.disable())
                 .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth ->  auth
@@ -54,7 +56,7 @@ public class SpringSecurityConfig {
 
                     .anyRequest().authenticated()
                 )
-                .addFilter(new JwtAuthenticationFilter(authenticationManager))
+                .addFilter(new JwtAuthenticationFilter(authenticationManager, refreshTokenService, usuarioRepository))
                 .addFilter(new JwtValidationFilter(authenticationManager))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .build();

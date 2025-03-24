@@ -1,13 +1,19 @@
 package com.example.login.auth.filters;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,19 +53,18 @@ public class JwtValidationFilter extends BasicAuthenticationFilter{
                             .build()
                             .parseSignedClaims(token)
                             .getPayload();
-            Object authoritiesClaims = claims.get("authorities");
-            String username = claims.getSubject();
+            boolean isAdmin = Optional.ofNullable(claims.get("isAdmin", Boolean.class)).orElse(false);
+            String username = claims.get("username", String.class);
+            String userId = claims.getSubject(); // ID del usuario
 
-            Collection<? extends GrantedAuthority> authorities = Arrays
-            .asList(new ObjectMapper()
-            .addMixIn(SimpleGrantedAuthority.class, SimpleGrantedAuthorityJsonCreator.class)
-            .readValue(authoritiesClaims.toString().getBytes(), SimpleGrantedAuthority[].class));
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority(isAdmin ? "ROLE_ADMIN" : "ROLE_USER"));
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
+            Authentication auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+            SecurityContextHolder.getContext().setAuthentication(auth);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
             chain.doFilter(request, response);
-            
+
 
         } catch (Exception e) {
             Map<String, String> body  = new HashMap<>();
